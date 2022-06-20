@@ -7,6 +7,11 @@ public class Vector3
         this.z = z;
     }
 
+    Vector3()
+    {
+
+    }
+
     public float x;
     public float y;
     public float z;

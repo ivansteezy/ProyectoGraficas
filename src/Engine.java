@@ -9,16 +9,18 @@ public class Engine extends JPanel
 
     private Mesh mMeshCube;
     private Matrix4x4 mProjectionMatrix;
+    private Vector3 mCamera;
     float fTheta;
 
     Engine()
     {
         mMeshCube = new Mesh();
         mProjectionMatrix = new Matrix4x4();
+        mCamera = new Vector3();
         fTheta = 0;
 
         // initialize cube
-        // South
+/*        // South
         mMeshCube.triangles.add(new Triangle(new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f, 1.0f,0.0f), new Vector3(1.0f, 1.0f, 0.0f)));
         mMeshCube.triangles.add(new Triangle(new Vector3(0.0f, 0.0f, 0.0f), new Vector3(1.0f, 1.0f,0.0f), new Vector3(1.0f, 0.0f, 0.0f)));
 
@@ -40,7 +42,9 @@ public class Engine extends JPanel
 
         // Bottom
         mMeshCube.triangles.add(new Triangle(new Vector3(1.0f, 0.0f, 1.0f), new Vector3(0.0f, 0.0f,1.0f), new Vector3(0.0f, 0.0f, 0.0f)));
-        mMeshCube.triangles.add(new Triangle(new Vector3(1.0f, 0.0f, 1.0f), new Vector3(0.0f, 0.0f,0.0f), new Vector3(1.0f, 0.0f, 0.0f)));
+        mMeshCube.triangles.add(new Triangle(new Vector3(1.0f, 0.0f, 1.0f), new Vector3(0.0f, 0.0f,0.0f), new Vector3(1.0f, 0.0f, 0.0f)));*/
+
+        mMeshCube.LoadFromFile("teapot.txt");
 
         float fNear = 0.1f;
         float fFar = 1000.0f;
@@ -136,30 +140,56 @@ public class Engine extends JPanel
 
 
             //offset into the screen
-            translatedTriangle.vertices[0].z = rotatedTriangleX.vertices[0].z + 3.0f;
-            translatedTriangle.vertices[1].z = rotatedTriangleX.vertices[1].z + 3.0f;
-            translatedTriangle.vertices[2].z = rotatedTriangleX.vertices[2].z + 3.0f;
+            translatedTriangle.vertices[0].z = rotatedTriangleX.vertices[0].z + 200.0f;
+            translatedTriangle.vertices[1].z = rotatedTriangleX.vertices[1].z + 200.0f;
+            translatedTriangle.vertices[2].z = rotatedTriangleX.vertices[2].z + 200.0f;
 
-            //project
-            MultiplyMatrixVector(translatedTriangle.vertices[0], projectedTriangle.vertices[0], mProjectionMatrix);
-            MultiplyMatrixVector(translatedTriangle.vertices[1], projectedTriangle.vertices[1], mProjectionMatrix);
-            MultiplyMatrixVector(translatedTriangle.vertices[2], projectedTriangle.vertices[2], mProjectionMatrix);
+            // calculate normals
+            Vector3 normal = new Vector3();
+            Vector3 line1 = new Vector3();
+            Vector3 line2 = new Vector3();
 
-            //scale into view
-            projectedTriangle.vertices[0].x += 1.0f; projectedTriangle.vertices[0].y += 1.0f;
-            projectedTriangle.vertices[1].x += 1.0f; projectedTriangle.vertices[1].y += 1.0f;
-            projectedTriangle.vertices[2].x += 1.0f; projectedTriangle.vertices[2].y += 1.0f;
-            projectedTriangle.vertices[0].x *= 0.5 * (float)800;
-            projectedTriangle.vertices[0].y *= 0.5 * (float)800;
-            projectedTriangle.vertices[1].x *= 0.5 * (float)800;
-            projectedTriangle.vertices[1].y *= 0.5 * (float)800;
-            projectedTriangle.vertices[2].x *= 0.5 * (float)800;
-            projectedTriangle.vertices[2].y *= 0.5 * (float)800;
+            line1.x = translatedTriangle.vertices[1].x - translatedTriangle.vertices[0].x;
+            line1.y = translatedTriangle.vertices[1].y - translatedTriangle.vertices[0].y;
+            line1.z = translatedTriangle.vertices[1].z - translatedTriangle.vertices[0].z;
 
-            DrawTriangle(projectedTriangle.vertices[0].x, projectedTriangle.vertices[0].y,
-                         projectedTriangle.vertices[1].x, projectedTriangle.vertices[1].y,
-                         projectedTriangle.vertices[2].x, projectedTriangle.vertices[2].y,
-                         Color.BLACK, mBuffer);
+            line2.x = translatedTriangle.vertices[2].x - translatedTriangle.vertices[0].x;
+            line2.y = translatedTriangle.vertices[2].y - translatedTriangle.vertices[0].y;
+            line2.z = translatedTriangle.vertices[2].z - translatedTriangle.vertices[0].z;
+
+            normal.x = line1.y * line2.z - line1.z * line2.y;
+            normal.y = line1.z * line2.x - line1.x * line2.z;
+            normal.z = line1.x * line2.y - line1.y * line2.x;
+
+            float l = (float)Math.sqrt(normal.x * normal.x + normal.y * normal.y + normal.y + normal.z * normal.z);
+            normal.x /= l; normal.y /= l; normal.z /= l;
+
+            //if(normal.z < 0)
+            if(normal.x * (translatedTriangle.vertices[0].x - mCamera.x) +
+               normal.y * (translatedTriangle.vertices[0].y - mCamera.y) +
+               normal.z * (translatedTriangle.vertices[0].z - mCamera.z)  < 0.0f)
+            {
+                //project
+                MultiplyMatrixVector(translatedTriangle.vertices[0], projectedTriangle.vertices[0], mProjectionMatrix);
+                MultiplyMatrixVector(translatedTriangle.vertices[1], projectedTriangle.vertices[1], mProjectionMatrix);
+                MultiplyMatrixVector(translatedTriangle.vertices[2], projectedTriangle.vertices[2], mProjectionMatrix);
+
+                //scale into view
+                projectedTriangle.vertices[0].x += 1.0f; projectedTriangle.vertices[0].y += 1.0f;
+                projectedTriangle.vertices[1].x += 1.0f; projectedTriangle.vertices[1].y += 1.0f;
+                projectedTriangle.vertices[2].x += 1.0f; projectedTriangle.vertices[2].y += 1.0f;
+                projectedTriangle.vertices[0].x *= 0.5 * (float)800;
+                projectedTriangle.vertices[0].y *= 0.5 * (float)800;
+                projectedTriangle.vertices[1].x *= 0.5 * (float)800;
+                projectedTriangle.vertices[1].y *= 0.5 * (float)800;
+                projectedTriangle.vertices[2].x *= 0.5 * (float)800;
+                projectedTriangle.vertices[2].y *= 0.5 * (float)800;
+
+                DrawTriangle(projectedTriangle.vertices[0].x, projectedTriangle.vertices[0].y,
+                        projectedTriangle.vertices[1].x, projectedTriangle.vertices[1].y,
+                        projectedTriangle.vertices[2].x, projectedTriangle.vertices[2].y,
+                        Color.BLACK, mBuffer);
+            }
         }
 
         graphics.drawImage(mBuffer, 0, 0, this);
