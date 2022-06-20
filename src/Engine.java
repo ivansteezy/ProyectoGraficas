@@ -1,6 +1,12 @@
+import com.sun.tools.javac.Main;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
 
 public class Engine extends JPanel
 {
@@ -14,6 +20,7 @@ public class Engine extends JPanel
 
     Engine()
     {
+        PlayClip();
         mMeshCube = new Mesh();
         mProjectionMatrix = new Matrix4x4();
         mCamera = new Vector3();
@@ -80,7 +87,6 @@ public class Engine extends JPanel
     public void paintComponent(Graphics graphics)
     {
         graphics.setColor(Color.BLACK);
-        graphics.setColor(Color.WHITE);
         graphics.fillRect(0, 0, 800, 800);
 
         mBuffer = new BufferedImage(800, 800, BufferedImage.TYPE_INT_ARGB);
@@ -188,7 +194,7 @@ public class Engine extends JPanel
                 DrawTriangle(projectedTriangle.vertices[0].x, projectedTriangle.vertices[0].y,
                         projectedTriangle.vertices[1].x, projectedTriangle.vertices[1].y,
                         projectedTriangle.vertices[2].x, projectedTriangle.vertices[2].y,
-                        Color.BLACK, mBuffer);
+                        Color.WHITE, mBuffer);
             }
         }
 
@@ -234,6 +240,26 @@ public class Engine extends JPanel
         DrawLine((int)x3, (int)y3, (int)x1, (int)y1, color, bufferedImage);
     }
 
+    public synchronized void PlayClip()
+    {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try
+                {
+                    Clip clip = AudioSystem.getClip();
+                    AudioInputStream inputStream = AudioSystem.getAudioInputStream(new File("theme.wav"));
+                    clip.open(inputStream);
+                    clip.start();
+                }
+                catch(Exception e)
+                {
+                    System.err.println(e.getMessage());
+                }
+            }
+        }).start();
+    }
+
     public static void main(String[] args) throws InterruptedException
     {
 
@@ -244,6 +270,7 @@ public class Engine extends JPanel
         app.add(engine);
         app.setSize(800, 800);
         app.setVisible(true);
+
 
         while (true)
         {
